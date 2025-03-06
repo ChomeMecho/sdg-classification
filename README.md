@@ -13,3 +13,9 @@ We used several machine learning models to classify the data into the 17 SDGs. T
 - Aurora SDG mBERT (Aurora)
 - 17 SDG mBERT (Aurora)
 
+
+### References
+https://huggingface.co/facebook/bart-large-mnli
+https://aurora-universities.eu/sdg-research/classify/
+https://zenodo.org/records/6487606
+
