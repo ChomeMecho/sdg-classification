@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse SHAP - SDG3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-lg p-6 bg-white shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-center mb-4">Analyse SHAP - SDG3</h1>
+        
+        <textarea id="inputText" class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-400" rows="4" placeholder="Entrez un texte ici..."></textarea>
+        
+        <button onclick="analyzeText()" class="w-full mt-3 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            Analyser
+        </button>
+        
+        <div id="results" class="mt-4"></div>
+    </div>
+
+    <script>
+        async function analyzeText() {
+            const text = document.getElementById("inputText").value;
+            if (!text.trim()) return;
+
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = '<p class="text-gray-500">Analyse en cours...</p>';
+
+            try {
+                const response = await fetch("http://localhost:5000/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+                displayResults(data, text);
+            } catch (error) {
+                resultsDiv.innerHTML = '<p class="text-red-500">Erreur lors de la requête.</p>';
+            }
+        }
+
+        function displayResults(data, text) {
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = `
+                <h2 class='text-lg font-semibold mb-2'>Résultats :</h2>
+                <p>Probabilité de "Bonne santé" : <strong>${(data.sdg3_probability * 100).toFixed(2)}%</strong></p>
+                <h3 class='mt-2 text-md font-semibold'>Mots influents :</h3>
+            `;
+
+            if (data.important_words.length === 0) {
+                resultsDiv.innerHTML += "<p class='text-gray-500'>Aucun mot clé identifié.</p>";
+                return;
+            }
+
+            // Surligner les mots influents dans le texte
+            let highlightedText = text;
+            data.important_words.forEach(([word, score]) => {
+                const regex = new RegExp(`\\b${word}\\b`, "gi");
+                highlightedText = highlightedText.replace(regex, `<span class="bg-yellow-200 font-bold">${word}</span>`);
+            });
+
+            resultsDiv.innerHTML += `<p class="mt-2">${highlightedText}</p>`;
+        }
+    </script>
+</body>
+</html>

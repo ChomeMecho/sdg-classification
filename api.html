@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDG Classifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-lg p-6 bg-white shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-center mb-4">Classifier un article</h1>
+        
+        <textarea id="inputText" class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-400" rows="4" placeholder="Entrez un texte ici..."></textarea>
+        
+        <button onclick="classifyText()" class="w-full mt-3 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            Classifier
+        </button>
+        
+        <div id="results" class="mt-4"></div>
+    </div>
+
+    <script>
+        const SDG_TRANSLATIONS = {
+            "No poverty": "Pas de pauvreté",
+            "Zero hunger": "Faim zéro",
+            "Good health and well-being": "Bonne santé et bien-être",
+            "Quality Education": "Éducation de qualité",
+            "Gender equality": "Égalité entre les sexes",
+            "Clean water and sanitation": "Eau propre et assainissement",
+            "Affordable and clean energy": "Énergie propre et d'un coût abordable",
+            "Decent work and economic growth": "Travail décent et croissance économique",
+            "Industry, innovation and infrastructure": "Industrie, innovation et infrastructure",
+            "Reduced inequalities": "Inégalités réduites",
+            "Sustainable cities and communities": "Villes et communautés durables",
+            "Responsible consumption and production": "Consommation et production responsables",
+            "Climate action": "Mesures relatives à la lutte contre les changements climatiques",
+            "Life below water": "Vie aquatique",
+            "Life in Land": "Vie terrestre",
+            "Peace, Justice and strong institutions": "Paix, justice et institutions efficaces",
+            "Partnerships for the goals": "Partenariats pour la réalisation des objectifs"
+        };
+
+        async function classifyText() {
+            const text = document.getElementById("inputText").value;
+            if (!text.trim()) return;
+
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = '<p class="text-gray-500">Analyse en cours...</p>';
+
+            try {
+                const response = await fetch("https://aurora-sdg.labs.vu.nl/classifier/classify/aurora-sdg-multi", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+                displayResults(data.predictions);
+            } catch (error) {
+                resultsDiv.innerHTML = '<p class="text-red-500">Erreur lors de la requête.</p>';
+            }
+        }
+
+        function displayResults(predictions) {
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "<h2 class='text-lg font-semibold mb-2'>Résultats :</h2>";
+
+            if (!predictions.length) {
+                resultsDiv.innerHTML += "<p class='text-gray-500'>Aucune correspondance trouvée.</p>";
+                return;
+            }
+
+            // Trier les prédictions par ordre décroissant
+            predictions.sort((a, b) => b.prediction - a.prediction);
+
+            const list = document.createElement("ul");
+            list.className = "list-disc pl-5";
+
+            predictions.forEach(prediction => {
+                const sdgName = prediction.sdg.name;
+                const translatedName = SDG_TRANSLATIONS[sdgName] || sdgName;
+                
+                const item = document.createElement("li");
+                item.innerHTML = `
+                    <span class="font-semibold">${translatedName}</span> 
+                    - ${(prediction.prediction * 100).toFixed(2)}%
+                `;
+                list.appendChild(item);
+            });
+
+            resultsDiv.appendChild(list);
+        }
+    </script>
+</body>
+</html>
